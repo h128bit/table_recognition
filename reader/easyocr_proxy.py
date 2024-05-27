@@ -4,9 +4,9 @@ import easyocr
 class EasyOcrProxy:
     def __init__(self, read_param=None, **kwargs):
         self._model = easyocr.Reader(lang_list=['ru', 'en'], **kwargs)
-        self._allow_list_ru = [' ', '.', ',']
-        self._allow_list_en = [' ', ',', '.']
-        self._allow_list_num = ['-', '+', ',', '.', ' ']
+        self._allow_list_ru = [' ']
+        self._allow_list_en = [' ']
+        self._allow_list_num = ['-', '.', ',']
 
         for i in range(0, ord('я') - ord('а') + 1):
             self._allow_list_ru.append(chr(ord('а') + i))
@@ -14,7 +14,7 @@ class EasyOcrProxy:
         for i in range(0, ord('z') - ord('a') + 1):
             self._allow_list_en.append(ord('a') + i)
             self._allow_list_en.append(ord('A') + i)
-        self._allow_list_num.extend([i for i in range(10)])
+        self._allow_list_num.extend([str(i) for i in range(10)])
 
         if read_param is None:
             self._read_param = {'decoder': 'greedy',
@@ -63,6 +63,8 @@ class EasyOcrProxy:
         return res
 
     def read_like_num(self, img):
-        return self._model.readtext(img, allowlist=self._allow_list_num, detail=0, **self._read_param)
+        read_param = self._read_param.copy()
+        read_param['detail'] = 0
+        return self._model.readtext(img, allowlist=self._allow_list_num, **read_param)
 
 

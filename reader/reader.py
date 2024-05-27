@@ -8,7 +8,7 @@ class Reader:
         self._cell_extractor = CellExtractor()
         self._model_proxy = EasyOcrProxy(**kwargs)
 
-    def _mapping(self, recognize_list, cells_list):
+    def _mapping(self, recognize_list, cells_list, img):
         """
         Doing mapping results recognize on found coordinates cells table
         :param recognize_list: list, where each element is ([bbox_text], text, confident)
@@ -28,7 +28,7 @@ class Reader:
             # run by elements in current column
             for idx_cell, cell in enumerate(col):
                 #  find all read strings in current cell
-                in_cell_list = [val[1] for idx, val in enumerate(recognize_list) if in_cell_check(val, cell) and val[2] >= 0.55]
+                in_cell_list = [val[1] for idx, val in enumerate(recognize_list) if in_cell_check(val, cell) and val[2] >= 0.80]
                 # if in current cell not found string
                 if len(in_cell_list) == 0:
                     image_table[idx_col].append(None)
@@ -37,23 +37,23 @@ class Reader:
                     image_table[idx_col].append(s)
 
         #  making result table
-        table = [[] for _ in range(len(cells_list))]
-        for idx_col, col in enumerate(cells_list):
-            for idx_cell, cell in enumerate(col):
-                val = image_table[idx_col][idx_cell]
-                table[idx_col].append(val)
-
         # table = [[] for _ in range(len(cells_list))]
         # for idx_col, col in enumerate(cells_list):
         #     for idx_cell, cell in enumerate(col):
-        #         #  if in an image table in current cell no element, then read it separately
-        #         if (val := image_table[idx_col][idx_cell]) is None:
-        #             x, y, w, h = cell
-        #             im = img[y: y + h, x:x + w]
-        #             s = ' '.join(model.read_advance(im, detail=0, allowlist=self.allow_list_num, min_size=0))
-        #             table[idx_col].append(s)
-        #         else:
-        #             table[idx_col].append(val)
+        #         val = image_table[idx_col][idx_cell]
+        #         table[idx_col].append(val)
+
+        table = [[] for _ in range(len(cells_list))]
+        for idx_col, col in enumerate(cells_list):
+            for idx_cell, cell in enumerate(col):
+                #  if in an image table in current cell no element, then read it separately
+                if (val := image_table[idx_col][idx_cell]) is None:
+                    x, y, w, h = cell
+                    im = img[y: y + h, x:x + w]
+                    s = ' '.join(self._model_proxy.read_like_num(im))
+                    table[idx_col].append(s)
+                else:
+                    table[idx_col].append(val)
 
         return table
 
@@ -71,6 +71,6 @@ class Reader:
         recognize_list = self._model_proxy.read(img)
         cells_list = self._cell_extractor.extract_cells(img)
         # each line in list is column in source table
-        table = self._mapping(recognize_list, cells_list)
+        table = self._mapping(recognize_list, cells_list, img)
         return self._to_dict(table)
 
