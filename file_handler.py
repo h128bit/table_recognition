@@ -46,5 +46,5 @@ class FileHandler:
 
         res = []
         for page in file:
-            res.append(self._cell_extractor.extract_cells(page))
+            res.append(self._reader.read(np.array(page)))
         return res
